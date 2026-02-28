@@ -104,6 +104,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var targetWord2='',currentCol2=0,word2Solved=false;
     var guessGrid=[],guessGrid2=[];
     var masterKeyBuf=null;
+    var currentPlayId=null,currentLinkId=null;
 
     /* ═══════════════════════════════════════════════════════
        INIT
@@ -160,6 +161,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         playsUsed=data.used;
                         serverBlocked=data.blocked;
                         serverReachable=true;
+                        currentLinkId=linkId;
+                        currentPlayId=data.playId||null;
                     }
                 }catch(e){ /* network error — treated as blocked below */ }
 
@@ -234,8 +237,14 @@ document.addEventListener('DOMContentLoaded', function () {
         o.classList.add('visible');document.body.appendChild(o);
     }
 
+    function reportResult(won,guesses){
+        if(!currentLinkId||!currentPlayId)return;
+        try{fetch('/.netlify/functions/result',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:currentLinkId,playId:currentPlayId,won:won,guesses:guesses})});}catch(e){}
+    }
+
     async function showGameOverScreen(isWin){
         clearProgress();
+        reportResult(isWin, isWin ? currentRow+1 : maxGuesses);
         var left=maxPlays-playsUsed,icon,title,body,sub;
         if(isWin){icon='🎉';title='Well done!';body='You found the word in '+(currentRow+1)+' guess'+(currentRow+1!==1?'es':'')+'!';}
         else{icon='😔';title='Better luck next time';body=!hideWordOnLoss?'The word was <strong>'+targetWord+'</strong>.': "You didn\u2019t find the word this time.";}
@@ -512,14 +521,37 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function useHint(){
         if(hintsRemaining<=0||isGameOver)return;
-        var word=(multiWord&&!word2Solved&&Math.random()<0.5)?targetWord2:targetWord;
+
+        /* Build candidate list: letters in the target word(s) the player has
+           NO knowledge of yet — key must have no status, or status 'absent'
+           (absent can appear if a duplicate letter was scored absent elsewhere).
+           Exclude anything already 'correct' or 'present' on the keyboard. */
         var candidates=[];
-        for(var i=0;i<wordLength;i++){var l=word[i],k=document.getElementById('key-'+l);if((!k||k.dataset.status!=='correct')&&candidates.indexOf(l)===-1)candidates.push(l);}
-        if(!candidates.length){showToast('All letters already revealed!');return;}
+        function addCandidates(word){
+            for(var i=0;i<word.length;i++){
+                var l=word[i];
+                if(candidates.indexOf(l)!==-1)continue;
+                var k=document.getElementById('key-'+l);
+                var status=k?k.dataset.status||'':'';
+                if(status!=='correct'&&status!=='present')candidates.push(l);
+            }
+        }
+        addCandidates(targetWord);
+        if(multiWord&&targetWord2)addCandidates(targetWord2);
+
+        if(!candidates.length){showToast('No new letters to reveal!');return;}
+
         var pick=candidates[Math.floor(Math.random()*candidates.length)];
         var hk=document.getElementById('key-'+pick);
-        if(hk){hk.classList.remove('present','absent','correct');hk.classList.add('correct','hint-flash');hk.dataset.status='correct';hk.addEventListener('animationend',function(){hk.classList.remove('hint-flash');},{once:true});}
-        showToast('\u2728 "'+pick+'" is in the word!',2200);hintsRemaining--;updateHintButton();
+        if(hk){
+            hk.classList.remove('present','absent','correct');
+            /* Mark yellow (present) — letter is in the word but position not given */
+            hk.classList.add('present','hint-flash');
+            hk.dataset.status='present';
+            hk.addEventListener('animationend',function(){hk.classList.remove('hint-flash');},{once:true});
+        }
+        showToast('\u2728 "'+pick+'" is in the word!',2200);
+        hintsRemaining--;updateHintButton();
     }
 
     function handleKeyPress(e){
@@ -638,6 +670,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function showWinOverlay(){clearProgress();
+        reportResult(true,currentRow+1);
         var n=currentRow+1,dist=shareDist?buildEmojiGrid(true):null;
         var msgs=['Genius! 🧠','Magnificent! ✨','Splendid! 🎉','Great! 👏','Good job! 😊','Phew! 😅'];
         var praise=n<=msgs.length?msgs[n-1]:'Got it! 🎊';
@@ -645,6 +678,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function showLossOverlay(){clearProgress();
+        reportResult(false,maxGuesses);
         var dist=shareDist?buildEmojiGrid(false):null;
         var body=hideWordOnLoss?'':(multiWord?'The words were <strong>'+targetWord+'</strong> &amp; <strong>'+targetWord2+'</strong>.':'The word was <strong>'+targetWord+'</strong>.');
         setTimeout(function(){var o=buildOverlay({icon:'😔',title:'Better luck next time',body:body||"You didn\u2019t find the word.",sub:'',dist:dist,btnText:null});document.body.appendChild(o);requestAnimationFrame(function(){o.classList.add('visible');});},600);
@@ -661,6 +695,7 @@ document.addEventListener('DOMContentLoaded', function () {
     ════════════════════════════════════════════════════════ */
 
     function setupCreator(){
+        if(!document.getElementById('generate-link-button'))return;
         var allCards=[
             {check:'hide-word-toggle',label:'hide-toggle-label'},{check:'nofeedback-toggle',label:'nofeedback-toggle-label'},
             {check:'nobackspace-toggle',label:'nobackspace-toggle-label'},{check:'onestrike-toggle',label:'onestrike-toggle-label'},
@@ -679,6 +714,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         document.getElementById('generate-link-button').addEventListener('click',async function(){
             var word=document.getElementById('custom-word-input').value.toUpperCase().trim();
+            var label=(document.getElementById('puzzle-label-input')||{}).value||'Untitled';
+            label=label.trim().slice(0,80)||'Untitled';
             var hints=parseInt(document.getElementById('custom-hints-input').value)||0;
             var guesses=parseInt(document.getElementById('custom-guesses-input').value)||6;
             var plays=parseInt(document.getElementById('custom-plays-input').value)||0;
@@ -707,6 +744,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 var d=await seal(pack(cfg),keyBuf);
                 /* Always link back to the root (index.html), never to creator.html */
                 var link=window.location.origin+'/?d='+d+'#'+secret;
+                /* Register the puzzle server-side for dashboard tracking */
+                try{
+                    var regId=await hashId(secret);
+                    var regPw=sessionStorage.getItem('creator_pw')||'';
+                    fetch('/.netlify/functions/register',{method:'POST',
+                        headers:{'Content-Type':'application/json','x-dashboard-password':regPw},
+                        body:JSON.stringify({id:regId,max:plays,label:label})});
+                }catch(re){}
                 var sc=document.getElementById('share-link-container'),si=document.getElementById('share-link-input');
                 si.value=link;sc.classList.remove('hidden');
                 var cb=document.getElementById('copy-link-button'),nb=cb.cloneNode(true);
