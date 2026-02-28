@@ -451,20 +451,39 @@ main {
 .switch-wrap input:checked + .switch-track { background:var(--accent); }
 .switch-wrap input:checked + .switch-track .switch-thumb { transform:translateX(16px); }
 
-/* ─── Hint unlock inline field ─── */
+/* ─── Hint unlock row ─── */
 .hint-unlock-row {
-    display:flex; align-items:center; gap:0.5rem;
-    margin-top:0.3rem; padding:0.5rem 0.75rem;
+    display:none;
+    align-items:center; gap:0.75rem;
+    padding:0.65rem 0.9rem;
     background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm);
-    font-size:0.8rem; color:var(--text-muted);
+    transition:all 0.2s;
 }
-.hint-unlock-row label { white-space:nowrap; display:flex; align-items:center; gap:0.4rem; flex:1; }
+.hint-unlock-row.visible { display:flex; }
+.hint-unlock-icon { font-size:1rem; flex-shrink:0; }
+.hint-unlock-text { display:flex; flex-direction:column; gap:0.1rem; flex:1; min-width:0; }
+.hint-unlock-label { font-size:0.82rem; font-weight:700; color:var(--text); }
+.hint-unlock-sub { font-size:0.68rem; color:var(--text-muted); }
 .hint-unlock-row input[type="number"] {
-    width:60px; padding:0.3rem 0.5rem;
-    font-family:'DM Sans',sans-serif; font-size:0.82rem;
-    background:var(--bg-tile); color:var(--text); border:1px solid var(--border);
-    border-radius:var(--radius-sm); outline:none; text-align:center;
-    transition:border-color 0.2s,box-shadow 0.2s; text-transform:none;
+    width:90px; flex-shrink:0;
+    padding:0.45rem 0.65rem;
+    font-family:'DM Sans',sans-serif; font-size:0.85rem;
+    background:var(--bg-tile); color:var(--text);
+    border:1px solid var(--border); border-radius:var(--radius-sm);
+    outline:none; text-align:center;
+    transition:border-color 0.2s,box-shadow 0.2s;
 }
-.hint-unlock-row input[type="number"]:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow); }
+.hint-unlock-row input[type="number"]:focus {
+    border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow);
+}
+.hint-unlock-row input[type="number"]::placeholder { color:var(--text-muted); font-size:0.75rem; }
+
+/* Filler card to balance 3-col grid */
+.rule-card-filler {
+    border:1.5px dashed rgba(42,45,62,0.4);
+    border-radius:10px;
+    background:transparent;
+    pointer-events:none;
+    min-height:56px;
+}
 

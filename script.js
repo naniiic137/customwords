@@ -949,10 +949,11 @@ document.addEventListener('DOMContentLoaded', function () {
         var hintsInput=document.getElementById('custom-hints-input');
         var hintUnlockRow=document.getElementById('hint-unlock-row');
         if(hintsInput&&hintUnlockRow){
-            hintsInput.addEventListener('input',function(){
+            function updateHintUnlockVisibility(){
                 var v=parseInt(hintsInput.value)||0;
-                hintUnlockRow.style.display=v>0?'flex':'none';
-            });
+                if(v>0){hintUnlockRow.style.display='flex';}else{hintUnlockRow.style.display='none';var hi=document.getElementById('hiddenhint-after-input');if(hi)hi.value='';}
+            }
+            hintsInput.addEventListener('input',updateHintUnlockVisibility);
         }
 
         document.getElementById('generate-link-button').addEventListener('click',async function(){
@@ -972,7 +973,8 @@ document.addEventListener('DOMContentLoaded', function () {
             var timerV=parseInt(document.getElementById('custom-timer-input').value)||60;
             var word2=mw?document.getElementById('custom-word2-input').value.toUpperCase().trim():'';
             var showModesVal=document.getElementById('show-modes-toggle')&&document.getElementById('show-modes-toggle').checked;
-            var hintUnlockVal=hints>0?(parseInt(document.getElementById('hiddenhint-after-input').value)||0):0;
+            var hintUnlockEl=document.getElementById('hiddenhint-after-input');
+            var hintUnlockVal=(hints>0&&hintUnlockEl&&hintUnlockEl.value.trim()!=='')?Math.max(1,parseInt(hintUnlockEl.value)||0):0;
             if(!word||!/^[A-Z]+$/.test(word)){showToast('Word must only contain letters A-Z.');return;}
             if(mw&&(!word2||!/^[A-Z]+$/.test(word2))){showToast('Second word must only contain letters A-Z.');return;}
             if(mw&&word2.length!==word.length){showToast('Both words must be the same length.');return;}
