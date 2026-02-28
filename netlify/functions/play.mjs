@@ -19,33 +19,29 @@ export default async (req) => {
     }
 
     try {
-        const store = getStore("plays");
+        // consistency: "strong" is critical — without it, rapid refreshes
+        // can read a stale null and reset the counter, allowing extra attempts.
+        const store = getStore({ name: "plays", consistency: "strong" });
 
-        let record = null;
-        try {
-            const raw = await store.get(id, { type: "text" });
-            if (raw) record = JSON.parse(raw);
-        } catch (e) { /* key doesn't exist yet — first open */ }
+        let used = 0;
+        let storedMax = max;
 
-        if (record) {
-            const storedMax = record.max;
-            const used = record.used;
-
-            // Already exhausted — block immediately, don't increment
-            if (used >= storedMax) {
-                return Response.json({ used, blocked: true });
-            }
-
-            // Has attempts left — consume one and let them play
-            const next = used + 1;
-            await store.set(id, JSON.stringify({ used: next, max: storedMax }));
-            return Response.json({ used: next, blocked: false });
-
-        } else {
-            // First ever open — register and let them play
-            await store.set(id, JSON.stringify({ used: 1, max }));
-            return Response.json({ used: 1, blocked: false });
+        const raw = await store.get(id, { type: "text" });
+        if (raw) {
+            const record = JSON.parse(raw);
+            used      = record.used;
+            storedMax = record.max; // always trust the server's stored max, not the client
         }
+
+        // Already used all attempts — block, don't increment
+        if (used >= storedMax) {
+            return Response.json({ used, blocked: true });
+        }
+
+        // Has attempts remaining — increment and allow
+        const next = used + 1;
+        await store.set(id, JSON.stringify({ used: next, max: storedMax }));
+        return Response.json({ used: next, blocked: false });
 
     } catch (e) {
         console.error("Function error:", e);
