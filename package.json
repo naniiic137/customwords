@@ -1,0 +1,13 @@
+{
+  "name": "custom-wordle",
+  "private": true,
+  "scripts": {
+    "build": "javascript-obfuscator script.js --output script.obf.js --compact true --control-flow-flattening true --dead-code-injection true --debug-protection false --identifier-names-generator hexadecimal --rename-globals false --self-defending false --string-array true --string-array-encoding base64 --string-array-threshold 0.75"
+  },
+  "devDependencies": {
+    "javascript-obfuscator": "^4.1.0"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}

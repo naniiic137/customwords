@@ -1,0 +1,9 @@
+To deploy a harder-to-reverse-engineering version (recommended for production):
+
+1. Run:  npm install
+2. Run:  npm run build
+3. This creates script.obf.js (obfuscated). Either:
+   - Change index.html to use script.obf.js instead of script.js, then deploy; or
+   - Replace script.js with the contents of script.obf.js, then deploy.
+
+New links use key derivation: the URL fragment is a token, not the key. Old links still work.
