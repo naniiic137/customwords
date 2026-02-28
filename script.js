@@ -144,10 +144,11 @@ document.addEventListener('DOMContentLoaded', function () {
                Only active when creator set a max-plays limit.
                We hash the fragment so the real decryption token never reaches the server.
                The server stores { used, max } per link and is the single source of truth.
-               localStorage is kept only as a fallback when the function is unreachable. */
+               If the server is unreachable the link is blocked (fail closed = secure). */
             if(maxPlays>0){
                 var linkId=await hashId(frag);
                 var serverBlocked=false;
+                var serverReachable=false;
                 try{
                     var res=await fetch('/.netlify/functions/play',{
                         method:'POST',
@@ -158,23 +159,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         var data=await res.json();
                         playsUsed=data.used;
                         serverBlocked=data.blocked;
-                        /* Keep localStorage in sync so offline refresh also blocks */
-                        try{localStorage.setItem(STORAGE_PLAYS_PREFIX+frag,JSON.stringify({used:playsUsed,maxPlays:maxPlays}));}catch(e){}
-                    } else {
-                        /* Server error — fall back to localStorage so UX doesn't break */
-                        throw new Error('server error');
+                        serverReachable=true;
                     }
-                }catch(e){
-                    /* Offline / function cold-start failure: use localStorage as fallback */
-                    try{
-                        var stored=localStorage.getItem(STORAGE_PLAYS_PREFIX+frag);
-                        if(stored){var lsData=JSON.parse(stored);playsUsed=Math.max(playsUsed,parseInt(lsData.used,10)||0);}
-                    }catch(e2){}
-                    if(playsUsed>=maxPlays){serverBlocked=true;}
-                    else{playsUsed++;try{localStorage.setItem(STORAGE_PLAYS_PREFIX+frag,JSON.stringify({used:playsUsed,maxPlays:maxPlays}));}catch(e2){}}
-                }
+                }catch(e){ /* network error — treated as blocked below */ }
 
-                if(serverBlocked){showBlockedScreen();return;}
+                if(!serverReachable||serverBlocked){showBlockedScreen();return;}
             }
 
             /* Update the URL's `used` field to match server count so a copied link is already incremented */
@@ -198,6 +187,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if(!savedProgress&&(cfg.savedGuesses&&cfg.savedGuesses.length>0||cfg.savedGuesses2&&cfg.savedGuesses2.length>0))savedProgress={savedGuesses:cfg.savedGuesses||[],savedGuesses2:cfg.savedGuesses2||[]};
 
             creatorContainer.classList.add('hidden');gameContainer.classList.remove('hidden');
+            var col=document.getElementById('create-own-link');if(col)col.classList.remove('hidden');
             initializeGame(savedProgress);
         }else{
             gameContainer.classList.add('hidden');creatorContainer.classList.remove('hidden');setupCreator();
@@ -715,7 +705,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 var cfg={word:word,word2:word2,hints:hints,guesses:guesses,plays:plays,used:0,
                          hide:hideW,nocol:noCol,nobk:noBk,one:oneStr,rf:rfirst,sd:shareDst,timed:timed,timer:timed?timerV:0};
                 var d=await seal(pack(cfg),keyBuf);
-                var link=window.location.origin+window.location.pathname+'?d='+d+'#'+secret;
+                /* Always link back to the root (index.html), never to creator.html */
+                var link=window.location.origin+'/?d='+d+'#'+secret;
                 var sc=document.getElementById('share-link-container'),si=document.getElementById('share-link-input');
                 si.value=link;sc.classList.remove('hidden');
                 var cb=document.getElementById('copy-link-button'),nb=cb.cloneNode(true);
