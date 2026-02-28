@@ -55,15 +55,12 @@ document.addEventListener('DOMContentLoaded', function () {
     function pack(cfg){
         var w=cfg.word.toUpperCase(),w2=(cfg.word2||'').toUpperCase(),mw=w2.length>0;
         var flags=(cfg.hide?1:0)|(cfg.nocol?2:0)|(cfg.nobk?4:0)|(cfg.one?8:0)|(cfg.rf?16:0)|(cfg.sd?32:0)|(mw?64:0)|(cfg.timed?128:0);
-        var flags2=(cfg.fibble?1:0)|(cfg.absurdle?2:0)|(cfg.mirror?4:0)|(cfg.fakenews?8:0)|(cfg.gaslight?16:0)|(cfg.schrodinger?32:0)|(cfg.falsehope?64:0)|(cfg.mimic?128:0);
-        var flags3=(cfg.showModes?1:0);
         var t=cfg.timer||0;
         var header=[];
         header.push(w.length);
         for(var c=0;c<w.length;c++)header.push(w.charCodeAt(c));
         header.push(flags,cfg.hints||0,cfg.guesses||6,cfg.plays||0,cfg.used||0,(t>>8)&0xff,t&0xff);
         if(mw){header.push(w2.length);for(var c=0;c<w2.length;c++)header.push(w2.charCodeAt(c));}
-        header.push(flags2,cfg.hintUnlock||0,flags3);
         return new Uint8Array(header);
     }
 
@@ -74,10 +71,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var f=u[i++],hints=u[i++],guesses=u[i++],plays=u[i++],used=u[i++];
         var timer=(u[i++]<<8)|u[i++],w2='';
         if(f&64){var w2l=u[i++];for(var c=0;c<w2l;c++)w2+=String.fromCharCode(u[i++]);}
-        var f2=0,hintUnlock=0,f3=0;
         var savedGuesses=[],savedGuesses2=[];
-        /* flags2 and hintUnlock and flags3 come next if present and not a saved-progress marker (0x00) */
-        if(i<u.length&&u[i]!==0){f2=u[i++];if(i<u.length&&u[i]!==0){hintUnlock=u[i++];if(i<u.length&&u[i]!==0){f3=u[i++];}else{i++;}}else{i++;}}
         if(i<u.length&&u[i]===0){
             i++;
             try{
@@ -86,70 +80,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 savedGuesses=parsed.g||[];savedGuesses2=parsed.g2||[];
             }catch(e){}
         }
-        return{word:w,word2:w2,hide:!!(f&1),nocol:!!(f&2),nobk:!!(f&4),one:!!(f&8),rf:!!(f&16),sd:!!(f&32),timed:!!(f&128),
-               fibble:!!(f2&1),absurdle:!!(f2&2),mirror:!!(f2&4),fakenews:!!(f2&8),gaslight:!!(f2&16),schrodinger:!!(f2&32),falsehope:!!(f2&64),mimic:!!(f2&128),
-               showModes:!!(f3&1),
-               hints:hints,guesses:guesses,plays:plays,used:used,timer:timer,hintUnlock:hintUnlock,savedGuesses:savedGuesses,savedGuesses2:savedGuesses2};
+        return{word:w,word2:w2,hide:!!(f&1),nocol:!!(f&2),nobk:!!(f&4),one:!!(f&8),rf:!!(f&16),sd:!!(f&32),timed:!!(f&128),hints:hints,guesses:guesses,plays:plays,used:used,timer:timer,savedGuesses:savedGuesses,savedGuesses2:savedGuesses2};
     }
 
     /* Generate 16-byte key → 22-char base64url secret */
     function genSecret(){return B64.enc(crypto.getRandomValues(new Uint8Array(16)).buffer);}
-
-    /* ═══════════════════════════════════════════════════════
-       ABSURDLE WORD LIST (common 5-letter words)
-    ════════════════════════════════════════════════════════ */
-    var WORDS5='abbey abhor abide abode abort about above abuse abyss acres acute admit adobe adopt adult after again agate agile agony agree ahead aided aimer aired aisle alarm album alert alike alien align alike allay alley allot allow aloft alone along aloof aloud alpen altar alter angel anger angle angry anime ankle annex anvil apart aphid apple apply apron aptly arbor arcane ardor arena argue arise arose array arson aside asked aspen asset atone attic audio audit augur avail avid avoid awake award aware awful babel baker baked balmy banjo banter baron batch beach braid brand brave bread break breed brine brisk broad broke brood brook brown brunt brute budge bulge bulky bully bunch bunny burly burnt burst cabin camel candy cargo carry camel cards caste cedar chalk champ chant charm chart chase cheap cheat check cheek chess chest chide child chime chirp chive chore chose civic clamp clank clash cling cloak clock clone close cloth cloud clown clump comet comet coral could count crave crawl crisp cross crowd crown crush curve daily dairy daisy dance dandy dated daylight dazes dealt decay deck decor delay dense depot depth deter diced digit dirge dirty disco ditty dodge dogma doubt dough dowdy dowry draft drain drama drape drawl dread dried drift drill drink droop drove drown drugs dryer duchy dully dumpy dunce dusty dwarf dwell dying eager early earns earth easel ebony efface eight elite ember emcee endow enjoy ennui envoy epoch erase erect erode erupt essay evade event every evict exist expel extol fable faced fails faint fairy faith false fancy fated fatty feast ferry fetch fetal fetch fever flair flame flank flare flash flask flaunt flesh flung flute foamy focus folly forge forth found frank fraud freak froth frost fudge fussy fuzzy games garb gauge gauze gavel glare glean glide gliph globe gloom gloss glove glyph goofy gorge gouge grace grade grain grasp graze greed greedy grill groan grope gross grove grove growl gruel guess guest guile gulch gusto gypsy habit hairy handy harsh haven havoc hazel heady heart hearth heist herbal herbs herds hinge hippo hippy hoist holly homer honey honor horse hound house hovels humid humus hurry hyena ideal idiot image impact inbox inept inert infer ingot inker input inter irked irate ivory jaunt jazzy jelly jewel jiffy jolly joust juicy jumpy keyed kiddo knack knave kneel knelt knobs knoll known kudos laden lager lapse larch laser latch later latte laugh layer leaky leapt ledge legal lemma lemon lethal level liege light lingo liner liner lingo lingo liner lisps liter liver lodge logic loopy lorry lotus lover lower lucid lurid lusty maker manic manor manly maple march masse mayor mealy meant messy metal minty mocha moody moose morph mossy mourn muddy mulch munch murky musty nasal needy nerve newsy nifty nippy noble nodal noise nonce noisy notch novel nymph occur ocean ochre offer often olive onion onset optic orbit order other otter ought outdo outdo outer oven ovoid oxide ozone paddy pansy papaw papal paper parka parse party pasta paste patio patsy paved payer peach pedal penny perky pesky petal petty phony pilot pinch piney pixel pizza place placid plaid plait plank plant plaza plead pleat pluck plumb plume plump plunk poach podgy poker polar polka poppy posse potty pouch prawn presto prima prime primp prism privy probe prone prong prone proof proud prove prowl proxy prune psalm psalm pubic pudgy pulse punch pupil purple quaff qualm qualm quaff rainy rally ramen ranch rapid raspy raven rawer reach reach realm realm reedy reign regal relax relay renal repay repel repay reset retch reuse revel rhyme rider ridge risky rivet roach rocky rouge rover rowdy rugged ruler rumba rupee rural sadly saint sauce saute saucy scale scald scant scoff scold scone scope score scout scowl scram scrap scrub scuff sedan seedy seize sense serum setup seven sewer shaky shale shame shank shard share shark sheen sheep sheer shelf shell shied shift shire shirk shirt shoal shred shrine shrug shuck sight silky since siren sixth sixty skate skimp skirt skull slain slang slant slash slick slide slime slimy slink slope slosh sloth slunk slurp small smear smite smoky snare sneak sneer snide sniff snipe snoop snout snowy soapy soggy solar solemn solid solve sonic sorry spare spark spawn speak speck spicy spill spire spoke spore spout spray spree sprig spunk squad squat squid stale stall stamp stand stank stark stark stash stave steam steel stern stiff sting stink stock stomp stone stool storm story stout stove strap straw strut stuck stump stung stunt suave sugar suave suite sulky sunny surge swab swam swamp swath swear sweat sweet swept swift swine swoop swore table tacky taffy taken tapir tardy taunt tawny tepid terse theme there thick thief thigh thing think thorn those three throe threw throw thrum tidal tiger tilts tithe topaz toxic track trade trail train tramp traps trash trawl tread treat trend trial trice trick tried tripe trite troll troop trove truce truly trump trump truss tryst tuber tunic twerp twill twirl twitch ulcer umber unwed upend usurp utter vapor viper viral vodka vogue voter wacky waltz warty waste watch water weary wedge weird whack whiff whirl while whirl whisk white whole whose wield windy witch witty wrath wrist wrote xenon yacht yummy zesty zippy';
-
-    var WORDS5_ARR=null;
-    function getAbsurdleList(len){
-        if(len===5){
-            if(!WORDS5_ARR)WORDS5_ARR=WORDS5.split(' ').filter(function(w){return w.length===5;});
-            return WORDS5_ARR;
-        }
-        /* For non-5-letter words, generate plausible fakes by permuting the target */
-        return [targetWord];
-    }
-
-    /* Score guess against a potential target (pure, no side effects) */
-    function scoreAgainst(guess,target){
-        var ta=target.split(''),ga=guess.split(''),res=new Array(ga.length);
-        for(var i=0;i<ga.length;i++)if(ga[i]===ta[i]){res[i]='C';ta[i]=null;}
-        for(var i=0;i<ga.length;i++){
-            if(res[i])continue;
-            var idx=ta.indexOf(ga[i]);
-            if(idx>-1){res[i]='P';ta[idx]=null;}else res[i]='A';
-        }
-        return res.join('');
-    }
-
-    /* After a guess, pick adversarial target from remaining candidates */
-    function absurdlePickTarget(guess,candidates){
-        var groups={};
-        for(var i=0;i<candidates.length;i++){
-            var key=scoreAgainst(guess,candidates[i]);
-            if(!groups[key])groups[key]=[];
-            groups[key].push(candidates[i]);
-        }
-        var best=null,bestKey='';
-        for(var k in groups){if(!best||groups[k].length>best.length){best=groups[k];bestKey=k;}}
-        /* If the "win" bucket is the largest, prefer the next largest to avoid accidental easy win */
-        var allCorrect=guess.split('').map(function(){return'C';}).join('');
-        if(bestKey===allCorrect&&Object.keys(groups).length>1){
-            var second=null;
-            for(var k in groups){if(k!==allCorrect&&(!second||groups[k].length>second.length))second=groups[k];}
-            if(second&&second.length>0)best=second;
-        }
-        return best;
-    }
-
-    /* Check if a candidate word is consistent with all previous scored rows */
-    function isConsistent(word,history){
-        for(var h=0;h<history.length;h++){
-            var row=history[h];
-            if(scoreAgainst(row.guess,word)!==row.key)return false;
-        }
-        return true;
-    }
 
     /* ═══════════════════════════════════════════════════════
        GAME STATE
@@ -170,19 +105,6 @@ document.addEventListener('DOMContentLoaded', function () {
     var guessGrid=[],guessGrid2=[];
     var masterKeyBuf=null;
     var currentPlayId=null,currentLinkId=null;
-
-    /* ── New mode flags ── */
-    var fibbleMode=false,absurdleMode=false,mirrorMode=false,fakeNewsMode=false;
-    var gaslightMode=false,schrodingerMode=false,falseHopeMode=false,mimicMode=false;
-    var hintUnlockAfter=0,showModesEnabled=false;
-    /* Absurdle: surviving word candidates */
-    var absurdleCandidates=[];
-    /* Schrödinger: which position is unstable, and the alternate letter */
-    var schrodingerPos=-1,schrodingerAlt='';
-    /* False Hope: first guess fake yellows, cleared after row 1 */
-    var falseHopeFired=false,falseHopeFakes=[];
-    /* Mimic: set once first guess submitted */
-    var mimicReady=false,mimicWord='';
 
     /* ═══════════════════════════════════════════════════════
        INIT
@@ -215,23 +137,6 @@ document.addEventListener('DOMContentLoaded', function () {
             maxPlays=cfg.plays;playsUsed=cfg.used;
             noColorFeedback=cfg.nocol;noBackspace=cfg.nobk;oneStrike=cfg.one;
             revealFirst=cfg.rf;shareDist=cfg.sd;timerSeconds=cfg.timer;timedMode=timerSeconds>=10;
-
-            /* New mode flags */
-            fibbleMode=cfg.fibble;absurdleMode=cfg.absurdle;mirrorMode=cfg.mirror;fakeNewsMode=cfg.fakenews;
-            gaslightMode=cfg.gaslight;schrodingerMode=cfg.schrodinger;falseHopeMode=cfg.falsehope;mimicMode=cfg.mimic;
-            hintUnlockAfter=cfg.hintUnlock||0;showModesEnabled=cfg.showModes||false;
-
-            /* Absurdle: init candidates to full word list, ensure creator's word is included */
-            if(absurdleMode){
-                absurdleCandidates=getAbsurdleList(wordLength).slice();
-                if(absurdleCandidates.indexOf(targetWord.toLowerCase())===-1)absurdleCandidates.push(targetWord.toLowerCase());
-            }
-            /* Schrödinger: pick a random position and a random alternate letter */
-            if(schrodingerMode){
-                schrodingerPos=Math.floor(Math.random()*wordLength);
-                var alpha='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-                do{schrodingerAlt=alpha[Math.floor(Math.random()*26)];}while(schrodingerAlt===targetWord[schrodingerPos]);
-            }
 
             var w2=cfg.word2.toUpperCase();
             if(w2&&w2.length===wordLength&&/^[A-Z]+$/.test(w2)){targetWord2=w2;multiWord=true;}
@@ -276,20 +181,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 try{localStorage.removeItem(STORAGE_PROGRESS_PREFIX+frag);}catch(e){}
             }
 
+            /* Progress restore */
             var savedProgress=null;
             try{
                 var prog=localStorage.getItem(STORAGE_PROGRESS_PREFIX+frag);
-                if(prog){var parsed=JSON.parse(prog);var hasG=parsed.g&&parsed.g.length>0,hasG2=parsed.g2&&parsed.g2.length>0;if(hasG||hasG2)savedProgress={savedGuesses:parsed.g||[],savedGuesses2:parsed.g2||[],partial:parsed.partial,mimicWord:parsed.mimicWord||''};
-                }
+                if(prog){var parsed=JSON.parse(prog);var hasG=parsed.g&&parsed.g.length>0,hasG2=parsed.g2&&parsed.g2.length>0;if(hasG||hasG2)savedProgress={savedGuesses:parsed.g||[],savedGuesses2:parsed.g2||[],partial:parsed.partial};}
             }catch(e){}
             if(!savedProgress&&(cfg.savedGuesses&&cfg.savedGuesses.length>0||cfg.savedGuesses2&&cfg.savedGuesses2.length>0))savedProgress={savedGuesses:cfg.savedGuesses||[],savedGuesses2:cfg.savedGuesses2||[]};
-
-            /* Restore mimic state from progress */
-            if(mimicMode&&savedProgress&&savedProgress.mimicWord){
-                mimicWord=savedProgress.mimicWord;
-                targetWord=mimicWord;
-                mimicReady=true;
-            }
 
             creatorContainer.classList.add('hidden');gameContainer.classList.remove('hidden');
             var col=document.getElementById('create-own-link');if(col)col.classList.remove('hidden');
@@ -316,9 +214,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if(isGameOver){clearProgress();return;}
             var partial=getPartialRow();
             var hasAny=partial.cells.some(function(l){return l!=='';})||(multiWord&&partial.cells2.some(function(l){return l!=='';}));
-            var prog={g:guessGrid,g2:guessGrid2,partial:hasAny?partial:null};
-            if(mimicMode&&mimicReady&&mimicWord)prog.mimicWord=mimicWord;
-            localStorage.setItem(STORAGE_PROGRESS_PREFIX+frag,JSON.stringify(prog));
+            localStorage.setItem(STORAGE_PROGRESS_PREFIX+frag,JSON.stringify({g:guessGrid,g2:guessGrid2,partial:hasAny?partial:null}));
         }catch(e){if(typeof showToast==='function')showToast('Could not save progress.',2000);}
     }
 
@@ -533,21 +429,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function showActiveModes(){
-        if(!showModesEnabled)return;
         var modes=[];
         if(noColorFeedback)modes.push('🔇 No feedback');if(noBackspace)modes.push('🚫 No backspace');
         if(oneStrike)modes.push('💀 One strike');if(revealFirst)modes.push('🔤 First letter');
         if(shareDist)modes.push('📊 Share result');if(multiWord)modes.push('🧩 Multi-word');
         if(timedMode)modes.push('⏱ '+timerSeconds+'s');
-        if(fibbleMode)modes.push('🤥 Fibble');
-        if(absurdleMode)modes.push('👾 Absurdle');
-        if(mirrorMode)modes.push('🪞 Mirror');
-        if(fakeNewsMode)modes.push('📰 Fake News');
-        if(gaslightMode)modes.push('😵 Gaslighting');
-        if(schrodingerMode)modes.push('🐱 Schrödinger');
-        if(falseHopeMode)modes.push('🌝 False Hope');
-        if(mimicMode)modes.push('🎭 Mimic');
-        if(hintUnlockAfter>0)modes.push('🔒 Hint after '+hintUnlockAfter);
         if(!modes.length)return;
         var bar=document.createElement('div');bar.className='mode-bar';
         bar.innerHTML=modes.map(function(m){return'<span class="mode-pill">'+m+'</span>';}).join('');
@@ -627,20 +513,7 @@ document.addEventListener('DOMContentLoaded', function () {
         badge.innerHTML='<span class="plays-icon">\uD83C\uDFAF</span><span class="plays-text">'+left+' attempt'+(left!==1?'s':'')+' left</span>';
     }
 
-    function updateHintButton(){
-        var btn=document.getElementById('hint-button');
-        var cnt=document.getElementById('hint-count');
-        cnt.textContent=hintsRemaining;
-        if(hintUnlockAfter>0&&currentRow<hintUnlockAfter){
-            btn.disabled=true;
-            var remaining=hintUnlockAfter-currentRow;
-            btn.title='Unlocks after '+hintUnlockAfter+' guesses';
-            cnt.textContent='🔒';
-        } else {
-            btn.disabled=hintsRemaining<=0;
-            btn.title='';
-        }
-    }
+    function updateHintButton(){var btn=document.getElementById('hint-button');document.getElementById('hint-count').textContent=hintsRemaining;btn.disabled=hintsRemaining<=0;}
 
     /* ═══════════════════════════════════════════════════════
        INPUT
@@ -725,7 +598,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if(multiWord){submitMultiGuess();return;}
         if(currentCol!==wordLength){shakeRow('Not enough letters');return;}
         var guess='';for(var i=0;i<wordLength;i++)guess+=document.getElementById('tile-'+currentRow+'-'+i).textContent;
-        var result=scoreGuess(guess,targetWord);result=applyModeScore(result,guess,currentRow);guessGrid.push(result.slice());
+        var result=scoreGuess(guess,targetWord);guessGrid.push(result.slice());
         saveProgress();
         revealTiles('tile',guess.split(''),result,function(w){checkSingleState(w);});
     }
@@ -737,12 +610,12 @@ document.addEventListener('DOMContentLoaded', function () {
         var win1=b1Done,win2=word2Solved,pending=0;
         if(!b1Done){
             var g1='';for(var i=0;i<wordLength;i++)g1+=document.getElementById('tile-'+currentRow+'-'+i).textContent;
-            var r1=scoreGuess(g1,targetWord);r1=applyModeScore(r1,g1,currentRow);guessGrid.push(r1.slice());pending++;
+            var r1=scoreGuess(g1,targetWord);guessGrid.push(r1.slice());pending++;
             revealTiles('tile',g1.split(''),r1,function(w){if(w)win1=true;pending--;if(!pending){saveProgress();afterMultiReveal(win1,win2,b1Done);}});
         }
         if(!word2Solved){
             var g2='';for(var i=0;i<wordLength;i++)g2+=document.getElementById('tile2-'+currentRow+'-'+i).textContent;
-            var r2=scoreGuess(g2,targetWord2);r2=applyModeScore(r2,g2,currentRow);guessGrid2.push(r2.slice());pending++;
+            var r2=scoreGuess(g2,targetWord2);guessGrid2.push(r2.slice());pending++;
             revealTiles('tile2',g2.split(''),r2,function(w){if(w){win2=true;word2Solved=true;showBoardBadge(2);}pending--;if(!pending){saveProgress();afterMultiReveal(win1,win2,b1Done);}});
         }
         if(pending===0){saveProgress();afterMultiReveal(win1,win2,b1Done);}
@@ -773,110 +646,8 @@ document.addEventListener('DOMContentLoaded', function () {
         return result;
     }
 
-    /* Apply all mode transformations to a scored result before revealing */
-    function applyModeScore(result,guess,rowIdx){
-        /* ── Mimic: first guess becomes the secret word (fires FIRST, before other modes) ── */
-        if(mimicMode&&!mimicReady&&rowIdx===0){
-            mimicWord=guess.toUpperCase();
-            targetWord=mimicWord;
-            mimicReady=true;
-            /* Re-score against the new targetWord (mimic word = original guess → all absent) */
-            result=result.map(function(e){return{l:e.l,s:'absent'};});
-            /* Absurdle candidates should include the mimic word so it can be found */
-            if(absurdleMode&&absurdleCandidates.indexOf(mimicWord.toLowerCase())===-1){
-                absurdleCandidates.push(mimicWord.toLowerCase());
-            }
-            return result; /* Return early — no other modes on row 0 in mimic */
-        }
-
-        /* ── Absurdle: adversarially pick new target each guess ── */
-        if(absurdleMode&&!mimicMode&&absurdleCandidates.length>1){
-            var history=[];
-            for(var r=0;r<guessGrid.length;r++){
-                var row=guessGrid[r];
-                var g='';for(var c=0;c<row.length;c++)g+=row[c].l;
-                var key=row.map(function(e){return e.s==='correct'?'C':e.s==='present'?'P':'A';}).join('');
-                history.push({guess:g,key:key});
-            }
-            var newCandidates=absurdleCandidates.filter(function(w){return isConsistent(w.toUpperCase(),history);});
-            if(newCandidates.length===0)newCandidates=absurdleCandidates;
-            var bestGroup=absurdlePickTarget(guess,newCandidates.map(function(w){return w.toUpperCase();}));
-            if(bestGroup&&bestGroup.length>0){
-                var newTarget=bestGroup[Math.floor(Math.random()*bestGroup.length)];
-                targetWord=newTarget.toUpperCase();
-                absurdleCandidates=newCandidates;
-                result=scoreGuess(guess,targetWord);
-            }
-        }
-
-        /* ── Schrödinger: unstable slot counts green for alt letter until attempt 5 ── */
-        if(schrodingerMode&&schrodingerPos>=0&&rowIdx<4){
-            if(guess[schrodingerPos]===schrodingerAlt||guess[schrodingerPos]===targetWord[schrodingerPos]){
-                result[schrodingerPos]={l:guess[schrodingerPos],s:'correct'};
-            }
-        }
-
-        /* ── Gaslight: every 3rd row (rows 2,5,…), secretly swap two positions in targetWord ── */
-        if(gaslightMode&&rowIdx>0&&(rowIdx+1)%3===0){
-            var p1=Math.floor(Math.random()*wordLength);
-            var p2;do{p2=Math.floor(Math.random()*wordLength);}while(p2===p1);
-            var arr=targetWord.split('');
-            var tmp=arr[p1];arr[p1]=arr[p2];arr[p2]=tmp;
-            targetWord=arr.join('');
-        }
-
-        /* ── False Hope: first row forces ≥2 yellows ── */
-        if(falseHopeMode&&rowIdx===0&&!falseHopeFired){
-            falseHopeFired=true;
-            var absentIdxs=[];
-            for(var i=0;i<result.length;i++)if(result[i].s==='absent')absentIdxs.push(i);
-            for(var i=absentIdxs.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var tmp2=absentIdxs[i];absentIdxs[i]=absentIdxs[j];absentIdxs[j]=tmp2;}
-            var realYellows=result.filter(function(e){return e.s==='present';}).length;
-            var toFake=Math.max(0,2-realYellows);
-            falseHopeFakes=[];
-            for(var i=0;i<Math.min(toFake,absentIdxs.length);i++){
-                result[absentIdxs[i]]={l:result[absentIdxs[i]].l,s:'present'};
-                falseHopeFakes.push(absentIdxs[i]);
-            }
-        }
-
-        /* ── Fibble: one non-absent tile per row is a lie ── */
-        if(fibbleMode){
-            var nonAbsent=[];
-            for(var i=0;i<result.length;i++)if(result[i].s!=='absent')nonAbsent.push(i);
-            if(nonAbsent.length>0){
-                var liePick=nonAbsent[Math.floor(Math.random()*nonAbsent.length)];
-                var oldS=result[liePick].s;
-                var others=(oldS==='correct')?['present','absent']:['correct','absent'];
-                result[liePick]={l:result[liePick].l,s:others[Math.floor(Math.random()*others.length)]};
-            }
-        }
-
-        /* ── Fake News: one completely random tile gets a wrong color ── */
-        if(fakeNewsMode){
-            var liePick2=Math.floor(Math.random()*result.length);
-            var oldS2=result[liePick2].s;
-            var all2=['correct','present','absent'].filter(function(s){return s!==oldS2;});
-            result[liePick2]={l:result[liePick2].l,s:all2[Math.floor(Math.random()*all2.length)]};
-        }
-
-        /* ── Mirror: swap correct↔present ── */
-        if(mirrorMode){
-            result=result.map(function(e){
-                var s=e.s==='correct'?'present':e.s==='present'?'correct':e.s;
-                return{l:e.l,s:s};
-            });
-        }
-
-        return result;
-    }
-
     function revealTiles(prefix,guessLetters,result,callback){
-        /* Win detection must check the ACTUAL correctness against the target word, not the displayed result
-           (which may be modified by Mirror/Fibble/FakeNews modes). */
-        var actualGuess='';for(var qi=0;qi<wordLength;qi++){var tq=document.getElementById(prefix+'-'+currentRow+'-'+qi);if(tq)actualGuess+=tq.textContent;else actualGuess+=guessLetters[qi]||'';}
-        var targetForWin=(prefix==='tile2')?targetWord2:targetWord;
-        var isWin=actualGuess.toUpperCase()===targetForWin.toUpperCase();
+        var isWin=result.every(function(e){return e.s==='correct';});
         result.forEach(function(entry,i){
             var status=entry.s, letter=entry.l;
             setTimeout(function(){
@@ -894,7 +665,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if(isWin){var tiles=document.querySelectorAll('[id^="tile-'+currentRow+'-"]');tiles.forEach(function(t,i){setTimeout(function(){t.classList.add('jump');},i*100);});isGameOver=true;stopTimer();if(maxPlays>0)showGameOverScreen(true);else showWinOverlay();}
             else if(oneStrike){isGameOver=true;stopTimer();if(maxPlays>0)showGameOverScreen(false);else showLossOverlay();}
             else if(currentRow===maxGuesses-1){isGameOver=true;stopTimer();if(maxPlays>0)showGameOverScreen(false);else showLossOverlay();}
-            else{isGameOver=false;currentRow++;currentCol=0;updateHintButton();}
+            else{isGameOver=false;currentRow++;currentCol=0;}
         },wordLength*300);
     }
 
@@ -929,11 +700,7 @@ document.addEventListener('DOMContentLoaded', function () {
             {check:'hide-word-toggle',label:'hide-toggle-label'},{check:'nofeedback-toggle',label:'nofeedback-toggle-label'},
             {check:'nobackspace-toggle',label:'nobackspace-toggle-label'},{check:'onestrike-toggle',label:'onestrike-toggle-label'},
             {check:'revealfirst-toggle',label:'revealfirst-toggle-label'},{check:'sharedist-toggle',label:'sharedist-toggle-label'},
-            {check:'multiword-toggle',label:'multiword-toggle-label'},{check:'timed-toggle',label:'timed-toggle-label'},
-            {check:'fibble-toggle',label:'fibble-toggle-label'},{check:'absurdle-toggle',label:'absurdle-toggle-label'},
-            {check:'mirror-toggle',label:'mirror-toggle-label'},{check:'fakenews-toggle',label:'fakenews-toggle-label'},
-            {check:'gaslight-toggle',label:'gaslight-toggle-label'},{check:'schrodinger-toggle',label:'schrodinger-toggle-label'},
-            {check:'falsehope-toggle',label:'falsehope-toggle-label'},{check:'mimic-toggle',label:'mimic-toggle-label'}
+            {check:'multiword-toggle',label:'multiword-toggle-label'},{check:'timed-toggle',label:'timed-toggle-label'}
         ];
         allCards.forEach(function(c){
             var label=document.getElementById(c.label),check=document.getElementById(c.check);
@@ -945,22 +712,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if(mwC&&mwE)mwC.addEventListener('change',function(){mwE.classList.toggle('hidden',!mwC.checked);});
         if(tmC&&tmE)tmC.addEventListener('change',function(){tmE.classList.toggle('hidden',!tmC.checked);});
 
-        /* Show hint-unlock row only when hints > 0 */
-        var hintsInput=document.getElementById('custom-hints-input');
-        var hintUnlockRow=document.getElementById('hint-unlock-row');
-        if(hintsInput&&hintUnlockRow){
-            function updateHintUnlockVisibility(){
-                var v=parseInt(hintsInput.value)||0;
-                hintUnlockRow.style.display=v>0?'flex':'none';
-                if(v<=0){var hi=document.getElementById('hiddenhint-after-input');if(hi)hi.value='';}
-            }
-            updateHintUnlockVisibility(); // run on load
-            hintsInput.addEventListener('input',updateHintUnlockVisibility);
-        }
-
         document.getElementById('generate-link-button').addEventListener('click',async function(){
             var word=document.getElementById('custom-word-input').value.toUpperCase().trim();
-            var label='Untitled';
+            var label=(document.getElementById('puzzle-label-input')||{}).value||'Untitled';
+            label=label.trim().slice(0,80)||'Untitled';
             var hints=parseInt(document.getElementById('custom-hints-input').value)||0;
             var guesses=parseInt(document.getElementById('custom-guesses-input').value)||6;
             var plays=parseInt(document.getElementById('custom-plays-input').value)||0;
@@ -974,9 +729,6 @@ document.addEventListener('DOMContentLoaded', function () {
             var timed=document.getElementById('timed-toggle').checked;
             var timerV=parseInt(document.getElementById('custom-timer-input').value)||60;
             var word2=mw?document.getElementById('custom-word2-input').value.toUpperCase().trim():'';
-            var showModesVal=document.getElementById('show-modes-toggle')&&document.getElementById('show-modes-toggle').checked;
-            var hintUnlockEl=document.getElementById('hiddenhint-after-input');
-            var hintUnlockVal=(hints>0&&hintUnlockEl&&hintUnlockEl.value.trim()!=='')?Math.max(1,parseInt(hintUnlockEl.value)||0):0;
             if(!word||!/^[A-Z]+$/.test(word)){showToast('Word must only contain letters A-Z.');return;}
             if(mw&&(!word2||!/^[A-Z]+$/.test(word2))){showToast('Second word must only contain letters A-Z.');return;}
             if(mw&&word2.length!==word.length){showToast('Both words must be the same length.');return;}
@@ -988,17 +740,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 var tokenBuf=new Uint8Array(B64.dec(secret));
                 var keyBuf=await deriveKey(tokenBuf);
                 var cfg={word:word,word2:word2,hints:hints,guesses:guesses,plays:plays,used:0,
-                         hide:hideW,nocol:noCol,nobk:noBk,one:oneStr,rf:rfirst,sd:shareDst,timed:timed,timer:timed?timerV:0,
-                         fibble:document.getElementById('fibble-toggle')&&document.getElementById('fibble-toggle').checked,
-                         absurdle:document.getElementById('absurdle-toggle')&&document.getElementById('absurdle-toggle').checked,
-                         mirror:document.getElementById('mirror-toggle')&&document.getElementById('mirror-toggle').checked,
-                         fakenews:document.getElementById('fakenews-toggle')&&document.getElementById('fakenews-toggle').checked,
-                         gaslight:document.getElementById('gaslight-toggle')&&document.getElementById('gaslight-toggle').checked,
-                         schrodinger:document.getElementById('schrodinger-toggle')&&document.getElementById('schrodinger-toggle').checked,
-                         falsehope:document.getElementById('falsehope-toggle')&&document.getElementById('falsehope-toggle').checked,
-                         mimic:document.getElementById('mimic-toggle')&&document.getElementById('mimic-toggle').checked,
-                         hintUnlock:hintUnlockVal,
-                         showModes:showModesVal};
+                         hide:hideW,nocol:noCol,nobk:noBk,one:oneStr,rf:rfirst,sd:shareDst,timed:timed,timer:timed?timerV:0};
                 var d=await seal(pack(cfg),keyBuf);
                 /* Always link back to the root (index.html), never to creator.html */
                 var link=window.location.origin+'/?d='+d+'#'+secret;
