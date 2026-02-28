@@ -1,13 +1,3 @@
-/**
- * Netlify Function v2: play.mjs
- * 
- * IMPORTANT: This file must be named play.mjs (not play.js)
- * The .mjs extension tells Netlify to use the v2 runtime which
- * automatically injects the Blobs context — fixing the MissingBlobsEnvironmentError.
- * 
- * DELETE the old play.js from netlify/functions/ and add this play.mjs instead.
- */
-
 import { getStore } from "@netlify/blobs";
 
 export default async (req) => {
@@ -41,17 +31,20 @@ export default async (req) => {
             const storedMax = record.max;
             const used = record.used;
 
+            // Already exhausted — block immediately, don't increment
             if (used >= storedMax) {
                 return Response.json({ used, blocked: true });
             }
 
+            // Has attempts left — consume one and let them play
             const next = used + 1;
             await store.set(id, JSON.stringify({ used: next, max: storedMax }));
-            return Response.json({ used: next, blocked: next >= storedMax });
+            return Response.json({ used: next, blocked: false });
 
         } else {
+            // First ever open — register and let them play
             await store.set(id, JSON.stringify({ used: 1, max }));
-            return Response.json({ used: 1, blocked: 1 >= max });
+            return Response.json({ used: 1, blocked: false });
         }
 
     } catch (e) {
