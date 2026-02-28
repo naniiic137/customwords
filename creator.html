@@ -89,13 +89,13 @@
                 <input type="number" id="custom-guesses-input" placeholder="Guesses" min="1" max="20" value="6">
             </div>
         </div>
-        <div class="hint-unlock-row" id="hint-unlock-row" style="display:none">
-            <span class="hint-unlock-icon">🔒</span>
-            <div class="hint-unlock-text">
+        <div class="hint-unlock-row" id="hint-unlock-row">
+            <div class="hint-unlock-top">
+                <span class="hint-unlock-icon">🔒</span>
                 <span class="hint-unlock-label">Unlock hints after</span>
-                <span class="hint-unlock-sub">Leave blank → hints available from the start</span>
+                <input type="number" id="hiddenhint-after-input" min="1" max="10" placeholder="# guesses">
             </div>
-            <input type="number" id="hiddenhint-after-input" min="1" max="10" placeholder="# guesses">
+            <div class="hint-unlock-sub">Leave blank → hints available from the start</div>
         </div>
 
         <div class="input-group">

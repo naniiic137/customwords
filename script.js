@@ -951,8 +951,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if(hintsInput&&hintUnlockRow){
             function updateHintUnlockVisibility(){
                 var v=parseInt(hintsInput.value)||0;
-                if(v>0){hintUnlockRow.style.display='flex';}else{hintUnlockRow.style.display='none';var hi=document.getElementById('hiddenhint-after-input');if(hi)hi.value='';}
+                hintUnlockRow.style.display=v>0?'flex':'none';
+                if(v<=0){var hi=document.getElementById('hiddenhint-after-input');if(hi)hi.value='';}
             }
+            updateHintUnlockVisibility(); // run on load
             hintsInput.addEventListener('input',updateHintUnlockVisibility);
         }
 

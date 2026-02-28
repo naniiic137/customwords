@@ -454,19 +454,18 @@ main {
 /* ─── Hint unlock row ─── */
 .hint-unlock-row {
     display:none;
-    align-items:center; gap:0.75rem;
-    padding:0.65rem 0.9rem;
+    flex-direction:column; gap:0.5rem;
+    padding:0.75rem 1rem;
     background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm);
-    transition:all 0.2s;
 }
-.hint-unlock-row.visible { display:flex; }
-.hint-unlock-icon { font-size:1rem; flex-shrink:0; }
-.hint-unlock-text { display:flex; flex-direction:column; gap:0.1rem; flex:1; min-width:0; }
-.hint-unlock-label { font-size:0.82rem; font-weight:700; color:var(--text); }
-.hint-unlock-sub { font-size:0.68rem; color:var(--text-muted); }
+.hint-unlock-row .hint-unlock-top {
+    display:flex; align-items:center; gap:0.65rem;
+}
+.hint-unlock-icon { font-size:1rem; flex-shrink:0; line-height:1; }
+.hint-unlock-label { font-size:0.82rem; font-weight:700; color:var(--text); flex:1; }
 .hint-unlock-row input[type="number"] {
     width:90px; flex-shrink:0;
-    padding:0.45rem 0.65rem;
+    padding:0.4rem 0.6rem;
     font-family:'DM Sans',sans-serif; font-size:0.85rem;
     background:var(--bg-tile); color:var(--text);
     border:1px solid var(--border); border-radius:var(--radius-sm);
@@ -476,7 +475,8 @@ main {
 .hint-unlock-row input[type="number"]:focus {
     border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow);
 }
-.hint-unlock-row input[type="number"]::placeholder { color:var(--text-muted); font-size:0.75rem; }
+.hint-unlock-row input[type="number"]::placeholder { color:var(--text-muted); font-size:0.72rem; }
+.hint-unlock-sub { font-size:0.7rem; color:var(--text-muted); line-height:1.4; padding-left:1.65rem; }
 
 /* Filler card to balance 3-col grid */
 .rule-card-filler {
