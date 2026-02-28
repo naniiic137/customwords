@@ -1,82 +1,61 @@
 /**
- * Netlify Function: play.js
- *
- * Tracks how many times a puzzle link has been opened server-side.
- * This makes the attempt limit work across private tabs, different
- * browsers, and different devices — not just on one device via localStorage.
- *
- * Storage: Netlify Blobs (free, built-in, no external DB needed)
- *
- * POST /.netlify/functions/play
- * Body: { id: "<sha256 of url fragment>", max: 3 }
- * Returns: { used: 2, blocked: false }
+ * Netlify Function v2: play.mjs
+ * 
+ * IMPORTANT: This file must be named play.mjs (not play.js)
+ * The .mjs extension tells Netlify to use the v2 runtime which
+ * automatically injects the Blobs context — fixing the MissingBlobsEnvironmentError.
+ * 
+ * DELETE the old play.js from netlify/functions/ and add this play.mjs instead.
  */
 
-const { getStore } = require('@netlify/blobs');
+import { getStore } from "@netlify/blobs";
 
-exports.handler = async (event) => {
-    /* Only allow POST */
-    if (event.httpMethod !== 'POST') {
-        return { statusCode: 405, body: 'Method Not Allowed' };
+export default async (req) => {
+    if (req.method !== "POST") {
+        return new Response("Method Not Allowed", { status: 405 });
     }
 
     let id, max;
     try {
-        const body = JSON.parse(event.body || '{}');
-        id  = String(body.id  || '').trim();
+        const body = await req.json();
+        id  = String(body.id  || "").trim();
         max = parseInt(body.max, 10);
     } catch (e) {
-        return { statusCode: 400, body: 'Bad Request' };
+        return new Response("Bad Request", { status: 400 });
     }
 
-    /* Validate inputs */
     if (!id || id.length < 10 || isNaN(max) || max < 1 || max > 100) {
-        return { statusCode: 400, body: 'Bad Request' };
+        return new Response("Bad Request", { status: 400 });
     }
 
     try {
-        const store = getStore('plays');
+        const store = getStore("plays");
 
-        /* Load existing record for this link (if any) */
         let record = null;
         try {
-            const raw = await store.get(id, { type: 'text' });
+            const raw = await store.get(id, { type: "text" });
             if (raw) record = JSON.parse(raw);
         } catch (e) { /* key doesn't exist yet — first open */ }
 
         if (record) {
-            /* Use the MAX that was stored on first open — ignore what the client sends now.
-               This prevents someone from calling the function directly with a fake high max. */
             const storedMax = record.max;
-            const used      = record.used;
+            const used = record.used;
 
             if (used >= storedMax) {
-                /* Already exhausted */
-                return respond(used, true);
+                return Response.json({ used, blocked: true });
             }
 
-            /* Increment */
             const next = used + 1;
             await store.set(id, JSON.stringify({ used: next, max: storedMax }));
-            return respond(next, next >= storedMax);
+            return Response.json({ used: next, blocked: next >= storedMax });
 
         } else {
-            /* First time this link is opened — register it with the max from the encrypted payload.
-               The client can't forge a higher max because max comes from the AES-GCM decrypted data. */
-            await store.set(id, JSON.stringify({ used: 1, max: max }));
-            return respond(1, 1 >= max);
+            await store.set(id, JSON.stringify({ used: 1, max }));
+            return Response.json({ used: 1, blocked: 1 >= max });
         }
 
     } catch (e) {
-        console.error('Blob store error:', e);
-        return { statusCode: 500, body: 'Storage error' };
+        console.error("Function error:", e);
+        return new Response("Storage error", { status: 500 });
     }
 };
-
-function respond(used, blocked) {
-    return {
-        statusCode: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ used, blocked }),
-    };
-}
